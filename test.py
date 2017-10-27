@@ -5,6 +5,7 @@ import sys
 import re
 import time
 import requests
+from SSDB import SSDB
 from pyquery import PyQuery as pq
 
 reload(sys)
@@ -101,37 +102,48 @@ if __name__ == "__main__":
     #     content = content + u'<p>' + dr.sub('', p.html()) + u'</p>'
     # content = content + u'<p><table border="0" cellspacing="1" cellpadding="10" width="100%">' + dom('table').html() + u'</table></p>'
     #
+    # # print content
+    # content_res = requests.get("http://www.hao6v.com/gydy/2013-11-26/21859.html")
+    # # print content_res.content
+    # # print content_res.content
+    # try:
+    #     text_content = unicode(content_res.content, 'gb2312')
+    # except Exception, ex:
+    #     print ex
+    #     try:
+    #         text_content = unicode(content_res.content, 'gbk')
+    #     except Exception, ex:
+    #         print ex
+    #         try:
+    #             text_content = unicode(content_res.content, 'gb18030')
+    #         except Exception, ex:
+    #             print ex
+    #             try:
+    #                 text_content = unicode(content_res.content, 'utf-8')
+    #             except Exception, ex:
+    #                 print ex
+    #                 text_content = content_res.content
+    # content_dom = pq(text_content)
+    # # print content_dom.html()
+    # ps = content_dom('#endText').find('p')
+    # content = u""
+    # dr = re.compile(r'<[/]*a[^>]*>', re.S)  # 去除 <a></a> 标签
+    # for p in ps.items():
+    #     print p.html()
+    # for p in ps.items():
+    #     if p.html():
+    #         content = content + u'<p>' + dr.sub('', p.html()) + u'</p>'
     # print content
-    content_res = requests.get("http://www.hao6v.com/gydy/2013-11-26/21859.html")
-    # print content_res.content
-    # print content_res.content
-    try:
-        text_content = unicode(content_res.content, 'gb2312')
-    except Exception, ex:
-        print ex
-        try:
-            text_content = unicode(content_res.content, 'gbk')
-        except Exception, ex:
-            print ex
-            try:
-                text_content = unicode(content_res.content, 'gb18030')
-            except Exception, ex:
-                print ex
-                try:
-                    text_content = unicode(content_res.content, 'utf-8')
-                except Exception, ex:
-                    print ex
-                    text_content = content_res.content
-    content_dom = pq(text_content)
-    # print content_dom.html()
-    ps = content_dom('#endText').find('p')
-    content = u""
-    dr = re.compile(r'<[/]*a[^>]*>', re.S)  # 去除 <a></a> 标签
-    for p in ps.items():
-        print p.html()
-    for p in ps.items():
-        if p.html():
-            content = content + u'<p>' + dr.sub('', p.html()) + u'</p>'
-    print content
-    content = content + u'<p><table border="0" cellspacing="1" cellpadding="10" width="100%">' + content_dom('table').html() + u'</table></p>'
-    print content
+    # content = content + u'<p><table border="0" cellspacing="1" cellpadding="10" width="100%">' + content_dom('table').html() + u'</table></p>'
+    # print content
+
+    ssdb = SSDB("127.0.0.1", 8888)
+
+    ssdb_res = ssdb.request('get', ["{}_{}".format("名称", 1)])
+    print ssdb_res.data
+
+    print ssdb_res
+
+    ssdb.request('set', ["{}_{}".format("名称", 1), "{}".format("标题")])
+    ssdb.request('expire', ["{}_{}".format("名称", 1), 60 * 60 * 24 * 1])  # 1天有效期
+

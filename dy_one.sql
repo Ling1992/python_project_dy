@@ -58,6 +58,17 @@ CREATE TABLE `dy_content_04` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='电影 4';
 
+CREATE TABLE `ip_collection` (
+  `id` int(10) NOT NULL AUTO_INCREMENT COMMENT '行号',
+  `ip` varchar(15) NOT NULL COMMENT 'ip 地址',
+  `request_url` varchar(255)  NOT NULL DEFAULT '' COMMENT '请求 uri',
+  `user_agent` varchar(255)  NOT NULL DEFAULT '' COMMENT 'UA',
+  `create_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '入库时间',
+  PRIMARY KEY (`id`),
+  KEY `ip` (`ip`),
+  KEY `create_date` (`create_date`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='记录 访问 ip';
+
 CREATE TABLE `ip_pool` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '行号',
   `ip` varchar(15) NOT NULL COMMENT 'ip 地址',
