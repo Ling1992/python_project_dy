@@ -76,10 +76,16 @@ def get_content(dom):
         for p in ps.items():
             if p.html():
                 content = content + u'<p>' + dr.sub('', p.html()) + u'</p>'
-        if content_dom('table').html():
-            params['content'] = content + u'<p><table border="0" cellspacing="1" cellpadding="10" width="100%">' + content_dom('table').html() + u'</table></p>'
-        else:
-            params['content'] = content
+
+        tables = content_dom('#endText').find('table')
+        for t in tables.items():
+            if u"预告片" in t.html() and u"player" in t.html():
+                continue
+            if t.html():
+                params[
+                    'content'] = content + u'<p><table border="0" cellspacing="1" cellpadding="10" width="100%">' + t.html() + u'</table></p>'
+            else:
+                params['content'] = content
 
         params['category_id'] = category_id
         # print params
