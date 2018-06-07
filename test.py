@@ -1,149 +1,190 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import sys
+import datetime
+import configparser
+import pyssdb
 import re
-import time
-import requests
-from SSDB import SSDB
+import pymysql
 from pyquery import PyQuery as pq
+from common import request
+from common import helper
 
-reload(sys)
-sys.setdefaultencoding('utf8')
 
-url = [
-    "http://www.hao6v.com/dy/index{}.html",     # # 最新
-    "http://www.hao6v.com/gydy/index{}.html",   # # 国语
-    "http://www.hao6v.com/zydy/index{}.html",   # # 微电影
-    "http://www.hao6v.com/gq/index{}.html",     # # 经典高清
-    "http://www.hao6v.com/jddy/index{}.html",   # # 动画电影
-    "http://www.hao6v.com/3D/index{}.html",     # # 3 D 电影
-    "http://www.hao6v.com/dlz/index{}.html",    # # 国剧
-    "http://www.hao6v.com/rj/index{}.html",     # # 日剧
-    "http://www.hao6v.com/mj/index{}.html",     # # 欧美剧
-    "http://www.hao6v.com/zy/index{}.html",     # # 综艺
-]
-url1 = [
-    "http://www.bd-film.co/zx/index{}.htm",  # # 最新
-    "http://www.bd-film.co/gq/index{}.htm",  # # 高清
-    "http://www.bd-film.co/gy/index{}.htm",  # # 国语
-    "http://www.bd-film.co/zy/index{}.htm",  # # 微电影
-    "http://www.bd-film.co/jd/index{}.htm",  # # 经典电影
-    "http://www.bd-film.co/dh/index{}.htm",  # # 动画电影
-    "http://www.bd-film.co/hj/index{}.htm",  # # 集合
-]
+def insert(data1, data2):
+    cursor = mysql.cursor()
+    try:
+        cursor.execute(insert_list_sql.format(**data1))
+        data2['id'] = cursor.lastrowid
+        cursor.execute(insert_content_sql.format(**data2))
+        mysql.commit()
+    except Exception as e:
+        mysql.rollback()
+        if 'Duplicate entry' in e.__str__():
+            print(' 重复的 ！！！！')
+        elif 'Out of range value for column' in e.__str__():
+            print(' 字段超出范围 ！！！')
+            helper.log('mysql insert 出错 ！！Exception: {}'.format(e))
+        else:
+            helper.log('mysql insert Exception: {}'.format(e))
+            raise Exception(e)
+    finally:
+        cursor.close()
+
+
+def select(url_md5_):
+    data = None
+    cursor = mysql.cursor()
+    try:
+        cursor.execute(select_list_sql.format(url_md5_))
+        mysql.commit()
+        data = cursor.fetchone()
+    except Exception as e:
+        mysql.rollback()
+        if 'Duplicate entry' in e.__str__():
+            print(' 重复的 ！！！！')
+        elif 'Out of range value for column' in e.__str__():
+            print(' 字段超出范围 ！！！')
+            helper.log('mysql insert 出错 ！！Exception: {}'.format(e))
+        else:
+            helper.log('mysql insert Exception: {}'.format(e))
+            raise Exception(e)
+    finally:
+        cursor.close()
+    return data
+
+
+def get_url(index):
+    # 处理 url
+    if index == 1:
+        return url.format(base_url, '')
+    else:
+        return url.format(base_url, "_{}".format(index))
+
 
 if __name__ == "__main__":
-    print sys.version
-    print time.ctime()
-    # # #  "" 或者 "_{}".format(n)
-    # print url[0].format("")
-    # content = None
-    #
-    # with open('test.html', 'r') as f:
-    #     content = f.read()
-    #
-    # if content is None:
-    #     sys.exit("content is None")
-    #
-    # # print content
-    # # text = unicode(content, encoding='utf-8')  # 解决乱码问题 TypeError: 'unicode' object is not callable
-    # dom = pq(content)
-    # # 页码 判断页数 1/n 格式
-    # index_str = dom('#main .listpage').find('b').html()
-    # pagination = index_str.split("/")
-    # page_one = pagination[0]  # 当前页数
-    # page_n = pagination[1]  # 总页数
-    #
-    # ul = dom('ul').filter('.list')
-    # lis = ul('li')
-    # pattern = re.compile(ur'[\u300a][\S\s]+[\u300b]')  # 获取电影name \u300b = 》;\u300a = 《
-    #
-    # for li in lis.items():
-    #     # print li.html()
-    #     # print li('span').html()
-    #     params = {}
-    #     dy_name = None
-    #     if li('a').find('font').html() is None:
-    #         dy_name = li('a').html()
-    #     else:
-    #         dy_name = li('a').find('font').html()
-    #     # print li('a').attr('href')
-    #     match = re.search(pattern, dy_name)
-    #     params['name'] = dy_name
-    #     print params
-    #     if match:
-    #         # print match.group()
-    #         pass
-    #     else:
-    #         if u"教你下载" in dy_name:
-    #             # print u'教程'
-    #             pass
-    #         else:
-    #             print u'错误 ！！！'
-    #             print li.html()
-    #             continue
-    # # name title category
-    #
-    # content = None
-    #
-    # with open('test1.html', 'r') as f:
-    #     content = f.read()
-    #
-    # dom = pq(content)
-    # content = dom('#endText').html()
-    # print dom('#endText').find('img').eq(0).attr('src')
-    # # print content
-    # ps = dom('#endText').find('p')
-    #
-    # content = u""
-    # dr = re.compile(r'<[/]*a[^>]*>', re.S)  # 去除 <a></a> 标签
-    # for p in ps.items():
-    #     content = content + u'<p>' + dr.sub('', p.html()) + u'</p>'
-    # content = content + u'<p><table border="0" cellspacing="1" cellpadding="10" width="100%">' + dom('table').html() + u'</table></p>'
-    #
-    # # print content
-    # content_res = requests.get("http://www.hao6v.com/gydy/2013-11-26/21859.html")
-    # # print content_res.content
-    # # print content_res.content
-    # try:
-    #     text_content = unicode(content_res.content, 'gb2312')
-    # except Exception, ex:
-    #     print ex
-    #     try:
-    #         text_content = unicode(content_res.content, 'gbk')
-    #     except Exception, ex:
-    #         print ex
-    #         try:
-    #             text_content = unicode(content_res.content, 'gb18030')
-    #         except Exception, ex:
-    #             print ex
-    #             try:
-    #                 text_content = unicode(content_res.content, 'utf-8')
-    #             except Exception, ex:
-    #                 print ex
-    #                 text_content = content_res.content
-    # content_dom = pq(text_content)
-    # # print content_dom.html()
-    # ps = content_dom('#endText').find('p')
-    # content = u""
-    # dr = re.compile(r'<[/]*a[^>]*>', re.S)  # 去除 <a></a> 标签
-    # for p in ps.items():
-    #     print p.html()
-    # for p in ps.items():
-    #     if p.html():
-    #         content = content + u'<p>' + dr.sub('', p.html()) + u'</p>'
-    # print content
-    # content = content + u'<p><table border="0" cellspacing="1" cellpadding="10" width="100%">' + content_dom('table').html() + u'</table></p>'
-    # print content
 
-    ssdb = SSDB("127.0.0.1", 8888)
+    # 初始化 配置 ssdb
+    config = configparser.ConfigParser()
+    config.read('config/test.ini')
+    ssdb = pyssdb.Client(host=config.get('local', 'ssdb_host'),
+                         port=config.getint('local', 'ssdb_port'))
+    request = request.Request(ssdb, config)
+    mysql = pymysql.Connect(host=config.get('server', 'mysql_host'),
+                            port=config.getint('server', 'mysql_port'),
+                            database=config.get('server', 'mysql_db'),
+                            user=config.get('server', 'mysql_user'),
+                            password=config.get('server', 'mysql_password'),use_unicode=True, charset="utf8")
+    insert_list_sql = "INSERT INTO hao6v_list(title, image_url, url_md5, category_id, update_at) VALUES('{title}', '{image_url}', '{url_md5}', {category_id}, {update_at})"
+    insert_content_sql = "INSERT INTO hao6v_content(id, content) VALUES({id}, '{content}')"
+    select_list_sql = "SELECT * FROM hao6v_list WHERE url_md5 = '{}'"
 
-    ssdb_res = ssdb.request('get', ["{}_{}".format("名称", 1)])
-    print ssdb_res.data
+    base_url = config.get('local', 'base_url')
+    post_url = config.get('server', 'post_url')
+    today = datetime.date.today()
 
-    print ssdb_res
+    # 1、n天前  2、所有
+    models = ['day', 'all']
+    mode = sys.argv[1]
 
-    ssdb.request('set', ["{}_{}".format("名称", 1), "{}".format("标题")])
-    ssdb.request('expire', ["{}_{}".format("名称", 1), 60 * 60 * 24 * 1])  # 1天有效期
+    if mode not in models:
+        raise Exception('模式错误')
+
+    if mode == 'day':
+        if len(sys.argv) <= 2:
+            day_n = '0'
+        else:
+            day_n = sys.argv[2]
+        print(day_n)
+        if not str.isdigit(day_n):
+            raise Exception('模式days 参数错误')
+    da1 = {}
+    da2 = {}
+    category_id = 1
+    for url in helper.urls:
+        page_index = 1
+        error_index = 1
+        break_two = False
+        while True:
+            # 获取列表信息
+            res = request.get(get_url(page_index))
+            if res is False:  # 400 没发现数据网页
+                if error_index >= 6:
+                    break    # 判断 如果返回 False 超过6次 直接退出 循环
+                error_index += 1
+            # 处理列表信息
+            if res:
+                dom = pq(helper.str_decode(res.content, 'gb2312'))
+                ul = dom('ul').filter('.list')
+                lis = ul('li')
+                for li in lis.items():
+                    # list: title update_at url
+                    update_at = li('span').text()
+                    movie_url = li('a').attr('href')
+                    da1['title'] = li('a').text()
+                    da1['url_md5'] = helper.md5(movie_url)
+                    da1['update_at'] = helper.str_to_time('%Y-%m-%d %H:%M:%S', update_at + " 8:00:00")
+
+                    if mode == 'day':  # 模式1
+                        base_date = today - datetime.timedelta(days=int(day_n))
+                        #  都转成 string 对比，但是 %M %m 是不相等的 所以都转成 datetime.date
+                        date = datetime.datetime.strptime(update_at, '%Y-%m-%d').date()
+                        if base_date > date:
+                            print('no')
+                            break_two = True
+                            break
+                    else:   # 模式2
+                        pass
+                    res = request.get(movie_url)
+                    if res:
+                        # # 开始抓取 数据
+                        dom = pq(helper.str_decode(res.content, 'gb2312'))
+                        endTextDom = dom('#endText')
+                        # # 获取第一张图片
+                        da1['image_url'] = endTextDom.find('img').eq(0).attr('src')
+                        da1['category_id'] = category_id
+                        content = ''
+                        name = ''
+                        category = ''
+                        # 获取内容
+                        ps = endTextDom.find('p')
+                        for p in ps.items():
+                            p_html = p.html()
+                            pss = re.findall('片|名|类|别|主|演', p_html)
+                            if len(pss) >= 4:
+                                # 获取 片名 译名 类型 存入xunsearch搜索引擎 xunsearch 字段 id name title url
+                                p_html = helper.rm_a(p_html)
+                                content = content + '<p>' + p_html + '</p>'
+                                con = helper.rm_blank1(p_html).split("\n")
+                                print(con)
+                                for c in con:
+                                    if '片名' in c or '译名' in c:  # 片名 译名 类别 name; Translated name; type;
+                                        name = name + "*" + helper.re_br(c)[3:]  # # 去除开头的 ['片名', '译名'] 和 结尾的 '<br />'
+                                    elif '类别' in c:
+                                        category = helper.re_br(c)[3:]
+                                print('类型: {}'.format(category))
+                                print('片名/译名: {}'.format(name))
+                                continue
+                            if '下载地址' in p.html():
+                                break
+                            content = content + p.__html__()
+                        content = content + '<hr /> <strong><span style="font-size: large"><span style="color: #ff0000">资源:</span></span></strong>'
+                        # 获取下载地址
+                        tables = endTextDom.find('table')
+                        for table in tables.items():
+                            table_html = table.__html__()
+                            if u"预告片" in table_html and u"play" in table_html:  # 测试这个...
+                                continue
+                            content = content + table_html
+                        pass     # # 存入数据库  存入搜索引擎
+                        da2['content'] = content
+                        if not select(da1['url_md5']):
+                            insert(da1, da2)
+                if break_two:
+                    break
+            else:
+                pass  # #  没有获取数据
+            page_index += 1
+        category_id += 1
+    mysql.close()
 

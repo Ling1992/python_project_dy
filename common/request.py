@@ -12,13 +12,16 @@ class Request(object):
         if not ssdb or not config:
             self.use_proxy = False
             print('request 无法使用 proxy ssdb 为None 或 config 为None')
+            self.use_proxy = False
+            self.change_proxy = False
         else:
             self.ssdb = ssdb
             self.config = config
             self.use_proxy = True
             self.proxy_addr = None
             self.change_proxy = True
-            self.agent = helper.get_random_agent()
+        self.proxy_addr = None
+        self.agent = helper.get_random_agent()
 
     def get_proxy(self):
         # get ip
@@ -42,7 +45,7 @@ class Request(object):
 
         headers = kwargs.get("headers")
         if headers is None:
-            headers = {}
+            headers = helper.headers
         headers['User-Agent'] = self.agent
         kwargs["headers"] = headers
 
@@ -84,8 +87,9 @@ class Request(object):
 
                     elif response.status_code == 404:
                         if retries == 1:
-                            raise Exception('404 错误！！！！')
-                        retries -= 1
+                            return False
+                            # raise Exception('404 错误！！！！')
+                        retries -= 2
 
                     elif response.status_code == 502:  # 设置了host  url是个重定向链接会出现这样的问题
                         retries -= 1

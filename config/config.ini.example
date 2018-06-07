@@ -1,0 +1,24 @@
+[local]
+;ip pool 使用
+project_name=
+
+ssdb_host=127.0.0.1
+ssdb_port=8888
+
+ssdb_queue_ip_pool=ssdb:local:ip:pool:%(project_name)s
+ssdb_kv_black_list=ssdb:local:ip:pool:black:list:%(project_name)s:
+
+ssdb_kv_black_list_check=ssdb:local:ip:pool:black:list:check:%(project_name)s:
+; 基础配置
+base_url=
+
+
+[server]
+; 将数据推送到 xunsearch搜索引擎
+post_url=
+; 将数据存入 远程数据库
+mysql_host=127.0.0.1
+mysql_port=3306
+mysql_user=root
+mysql_password=root
+mysql_db=db

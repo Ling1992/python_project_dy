@@ -2,7 +2,8 @@
 import random
 import time
 import os
-from pyquery import PyQuery as pq
+import re
+import hashlib
 
 
 agent = [
@@ -25,6 +26,30 @@ agent = [
     ]
 
 
+urls = [
+        "{}/dy/index{}.html",  # # 最新 1
+        "{}/gydy/index{}.html",  # # 国语  2
+        "{}/zydy/index{}.html",  # # 微电影 3
+        "{}/gq/index{}.html",  # # 经典高清    4
+        "{}/jddy/index{}.html",  # # 动画电影    5
+        "{}/3D/index{}.html",  # # 3 D 电影  6
+        "{}/dlz/index{}.html",  # # 国剧  7
+        "{}/rj/index{}.html",  # # 日剧  8
+        "{}/mj/index{}.html",  # # 欧美剧 9
+        "{}/zy/index{}.html",  # # 综艺  10
+    ]
+
+
+headers = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7',
+    'Cache-Control': 'no-cache',
+    'Host': 'www.XXX.com',
+    'Pragma': 'no-cache'
+}
+
+
 def get_random_agent():
     return random.choice(agent)
 
@@ -40,7 +65,12 @@ def log(logs):
 
 
 def str_decode(content, priority='utf-8'):
-
+    """
+    将不是文本内容转按 ['utf-8', 'gb2312', 'gbk', 'gb18030'] 解码 至utf-8
+    :param content: 
+    :param priority: 
+    :return: 
+    """
     decode_types = ['utf-8', 'gb2312', 'gbk', 'gb18030']
 
     if priority not in decode_types:
@@ -60,64 +90,39 @@ def str_decode(content, priority='utf-8'):
             print('str_decode {} exception {}'.format(priority, e))
 
 
-def translate_collect_ip_html(html, callback=None):
-    dom = pq(html)
-    trs = dom('table')('tr')
-    i = 0
-    for tr in trs.items():
-        i += 1
-        if i == 1:
-            continue
-        else:
-            tds = tr('td')
-            data = {}
-            j = 0
-            for td in tds.items():
-                j += 1
-                if j == 2:  # Ip地址
-                    data['host'] = td.html()
-
-                if j == 3:  # 端口
-                    data['port'] = td.html()
-
-                if j == 6:  # 类型
-                    data['type'] = td.html().lower()
-
-                if j == 7:  # 速度
-                    race = str_to_second(td('div').attr('title'))
-
-                    if race > 10:
-                        data = {}
-                        continue
-
-                if j == 8:  # 连接时间
-                    connect_time = str_to_second(td('div').attr('title'))
-
-                    if connect_time > 10:
-                        data = {}
-                        continue
-
-            if data and callback:
-                callback(data)
-    pass
-
-
-def str_to_second(time_str):
-    if time_str:
-        if '秒' in time_str:
-            time_str = time_str.replace('秒', '')
-            return eval(time_str)
-        elif '分' in time_str or '分钟' in time_str:
-            time_str = time_str.replace('分钟', '')
-            time_str = time_str.replace('分', '')
-            return eval(time_str) * 60
-        elif '小时' in time_str:
-            time_str = time_str.replace('小时', '')
-            return eval(time_str) * 60 * 60
-        else:
-            return 10000
+def rm_a(content):
+    """
+    去除 文本所包含的 <a></a> a标签
+    :param content: 
+    :return: 
+    """
+    dr = re.compile(r'<[/]*a[^>]*>', re.S)
+    if content:
+        return dr.sub('', content)
     else:
-        return 0
+        return content
+
+
+def rm_blank1(content):
+    if content:
+        return re.sub(r'\u3000', '', content)
+    else:
+        return content
+
+
+def md5(str_):
+    return hashlib.md5(str_.encode(encoding='UTF-8')).hexdigest()
+
+
+def str_to_time(format_, str_):
+    return time.mktime(time.strptime(str_, format_))
+
+
+def re_br(content):
+    if content:
+        return re.sub(r'<br\s*/>', '', content)
+    else:
+        return content
 
 
 def create_pid_file():
