@@ -11,6 +11,13 @@ CREATE TABLE `hao6v_list` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='电影 列表';
 
+create table `hao6v_search` (
+  `id` mediumint unsigned NOT NULL AUTO_INCREMENT COMMENT '行号',
+  `title` varchar(200) DEFAULT '' COMMENT '列表 标题',
+  `category` varchar(50) DEFAULT '' comment '类别',
+  PRIMARY KEY (`id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='电影 列表';
+
 CREATE TABLE `hao6v_content` (
   `id` mediumint unsigned NOT NULL AUTO_INCREMENT COMMENT '行号 与 list_id相同',
   `content` text COMMENT '内容',

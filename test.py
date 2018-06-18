@@ -142,6 +142,8 @@ if __name__ == "__main__":
                         endTextDom = dom('#endText')
                         # # 获取第一张图片
                         da1['image_url'] = endTextDom.find('img').eq(0).attr('src')
+                        if len(da1['image_url']) > 100:
+                            da1['image_url'] = 'url太长！！'
                         da1['category_id'] = category_id
                         content = ''
                         name = ''

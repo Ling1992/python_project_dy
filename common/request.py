@@ -3,6 +3,7 @@ import requests
 from common import helper
 import http.cookiejar
 import time
+import json
 
 
 class Request(object):
@@ -21,12 +22,13 @@ class Request(object):
             self.proxy_addr = None
             self.change_proxy = True
         self.proxy_addr = None
+        self.proxies = None
         self.agent = helper.get_random_agent()
 
     def get_proxy(self):
         # get ip
         if self.use_proxy and self.change_proxy:
-            proxy_info = self.ssdb.qpop(self.config.get('local', 'ssdb_queue_ip_pool'))
+            proxy_info = json.loads(self.ssdb.qpop(self.config.get('local', 'ssdb_queue_ip_pool')))
             self.agent = helper.get_random_agent()
             if not proxy_info:
                 print('proxy_info 不存在 ！！！')
@@ -34,7 +36,8 @@ class Request(object):
                 pass
             else:
                 self.proxy_addr = '{}://{}:{}'.format(proxy_info['type'], proxy_info['host'], proxy_info['port'])
-                self.ssdb.set(self.config.get('local', 'ssdb_kv_black_list') + proxy_info['id'], self.proxy_addr)
+                self.proxies = {'{}'.format(proxy_info['type']): self.proxy_addr}
+                self.ssdb.set(self.config.get('local', 'ssdb_kv_black_list') + str(proxy_info['id']), self.proxy_addr)
 
     def get(self, url, retries=3, interval=5, **kwargs):
         if retries < 0:
@@ -50,7 +53,7 @@ class Request(object):
         kwargs["headers"] = headers
 
         if self.proxy_addr:
-            kwargs["proxies"] = self.proxy_addr
+            kwargs["proxies"] = self.proxies
 
         print(kwargs)
         session = requests.session()
@@ -64,7 +67,7 @@ class Request(object):
             print('not find cookies . exception:', e)
 
         helper.log('url:{} ; proxy:{}'.format(url, self.proxy_addr))
-
+        print('url:{} ; proxy:{}'.format(url, self.proxy_addr))
         time.sleep(interval)  # 请求 间隔
         try:
             response = session.get(url, timeout=20, **kwargs)
@@ -74,8 +77,8 @@ class Request(object):
                 helper.log('response.status_code:{}'.format(response.status_code))
                 if response.status_code == 200:  # 请求成功
                     helper.log('请求成功 ！！！！')
-                    return response
-
+                    if response:
+                        return response
                 else:
                     # 407 请求失败 需要代理认证
                     # 403 代理 被网站限制
@@ -104,12 +107,16 @@ class Request(object):
                 helper.log('请求错误！！！ response为:{}'.format(response))
         except Exception as e:  # 连接超时 拒绝 中止 没网络 等
             helper.log('请求出错 Exception:{}'.format(e))
-            if "ConnectTimeoutError" in e \
-                    or "[Errno 60] Operation timed out" in e\
-                    or "[Errno 61] Connection refused":
+            e_message = '{}'.format(e)
+            if "ConnectTimeoutError" in e_message:
                 pass
-
-            elif "Connection aborted" in e:
+            elif "[Errno 60] Operation timed out" in e_message:
+                pass
+            elif "[Errno 61] Connection refused" in e_message:
+                pass
+            elif "Read timed out" in e_message:
+                pass
+            elif "Connection aborted" in e_message:
                 retries -= 1
 
             else:
@@ -120,4 +127,7 @@ class Request(object):
             return self.get(url, retries, interval + 1, **kwargs)
 
         return None
+
+    def post(self, url, **kwargs):
+        return requests.post(url, kwargs)
 

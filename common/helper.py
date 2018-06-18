@@ -100,14 +100,24 @@ def rm_a(content):
     if content:
         return dr.sub('', content)
     else:
-        return content
+        return ""
 
 
 def rm_blank1(content):
     if content:
-        return re.sub(r'\u3000', '', content)
+        content = re.sub(r'\u3000', '', content)
+        content = re.sub(' ', '', content)
+        return re.sub('\xa0', '', content)
     else:
-        return content
+        return ""
+
+
+def fix_content(content):
+    if content:
+        content = re.sub(r'\\\'', '`', content)
+        return re.sub(r'\'', '`', content)
+    else:
+        return ""
 
 
 def md5(str_):
@@ -120,7 +130,8 @@ def str_to_time(format_, str_):
 
 def re_br(content):
     if content:
-        return re.sub(r'<br\s*/>', '', content)
+        content = re.sub(r'<br\s*/>', '', content)
+        return re.sub(r'&#13;', '', content)
     else:
         return content
 
