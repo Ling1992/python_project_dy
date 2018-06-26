@@ -78,6 +78,7 @@ class Request(object):
                 if response.status_code == 200:  # 请求成功
                     helper.log('请求成功 ！！！！')
                     if response:
+                        print(response)
                         return response
                 else:
                     # 407 请求失败 需要代理认证
@@ -89,11 +90,11 @@ class Request(object):
                         pass
 
                     elif response.status_code == 404:
-                        if retries == 1:
-                            return False
-                            # raise Exception('404 错误！！！！')
-                        retries -= 2
-
+                        print('404!!!!!!!!!')
+                        return False
+                    elif response.status_code == 400:
+                        print('400!!!!!!!!!')
+                        return False
                     elif response.status_code == 502:  # 设置了host  url是个重定向链接会出现这样的问题
                         retries -= 1
 
@@ -104,7 +105,30 @@ class Request(object):
                     self.change_proxy = True
                     return self.get(url, retries, interval + 1, **kwargs)
             else:
-                helper.log('请求错误！！！ response为:{}'.format(response))
+                helper.log('请求错误！！！ response为:{}'.format(response.status_code))
+                # 407 请求失败 需要代理认证
+                # 403 代理 被网站限制
+                # 503 代理 被网站限制
+                if response.status_code == 407 \
+                        or response.status_code == 403\
+                        or response.status_code == 503:
+                    pass
+
+                elif response.status_code == 404:
+                    print('404!!!!!!!!!')
+                    return False
+                elif response.status_code == 400:
+                    print('400!!!!!!!!!')
+                    return False
+                elif response.status_code == 502:  # 设置了host  url是个重定向链接会出现这样的问题
+                    retries -= 1
+
+                else:
+                    helper.log('未知错误！！！')
+                    retries -= 1
+
+                self.change_proxy = True
+                return self.get(url, retries, interval + 1, **kwargs)
         except Exception as e:  # 连接超时 拒绝 中止 没网络 等
             helper.log('请求出错 Exception:{}'.format(e))
             e_message = '{}'.format(e)

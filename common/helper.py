@@ -27,9 +27,9 @@ agent = [
 
 
 urls = [
-        "{}/dy/index{}.html",  # # 最新 1
-        "{}/gydy/index{}.html",  # # 国语  2
-        "{}/zydy/index{}.html",  # # 微电影 3
+        # "{}/dy/index{}.html",  # # 最新 1
+        # "{}/gydy/index{}.html",  # # 国语  2
+        # "{}/zydy/index{}.html",  # # 微电影 3
         "{}/gq/index{}.html",  # # 经典高清    4
         "{}/jddy/index{}.html",  # # 动画电影    5
         "{}/3D/index{}.html",  # # 3 D 电影  6
@@ -67,10 +67,12 @@ def log(logs):
 def str_decode(content, priority='utf-8'):
     """
     将不是文本内容转按 ['utf-8', 'gb2312', 'gbk', 'gb18030'] 解码 至utf-8
-    :param content: 
-    :param priority: 
-    :return: 
+    :param content:
+    :param priority:
+    :return:
     """
+    if not content:
+        return ''
     decode_types = ['utf-8', 'gb2312', 'gbk', 'gb18030']
 
     if priority not in decode_types:
@@ -88,7 +90,7 @@ def str_decode(content, priority='utf-8'):
             return content.decode(decode_type)
         except Exception as e:
             print('str_decode {} exception {}'.format(priority, e))
-
+    return ''
 
 def rm_a(content):
     """
